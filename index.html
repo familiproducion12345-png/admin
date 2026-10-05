@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Moto · Panel de administrador</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.css">
+<style>
+:root{--red:#E11931;--red2:#FF3B53;--redD:#9E071A;--tint:#FFF0F2;--ink:#0F0F14;--mut:#6E6E7A;--line:#E8E8ED;--bg:#F2F2F7;--card:#fff;--green:#18b25b;--amber:#F5A100;--blue:#0A63E8;--sh:0 6px 22px rgba(0,0,0,.07)}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:"Plus Jakarta Sans",system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;-webkit-font-smoothing:antialiased}
+button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+input,select,textarea{font:inherit;color:inherit}
+a{color:inherit;text-decoration:none}
+[hidden]{display:none!important}
+
+/* Login */
+#login{min-height:100%;display:grid;place-items:center;padding:20px;background:linear-gradient(150deg,var(--red2),var(--redD))}
+.lbox{background:#fff;border-radius:28px;padding:30px;width:min(400px,100%);box-shadow:0 30px 60px rgba(0,0,0,.25)}
+.lbox h1{font-size:28px;font-weight:800;letter-spacing:-1px}
+.lbox p{color:var(--mut);margin:4px 0 18px;font-weight:500}
+.lbox label{display:block;font-weight:800;font-size:12px;margin:12px 0 5px;text-transform:uppercase;letter-spacing:.4px;color:var(--mut)}
+.lbox input{width:100%;border:2px solid transparent;background:#F7F7FA;border-radius:14px;padding:14px;outline:0;font-weight:600}
+.lbox input:focus{border-color:var(--red);background:#fff}
+.lerr{display:none;background:var(--tint);color:var(--redD);border:2px solid #FFC9CE;border-radius:14px;padding:12px;font-weight:700;margin-top:12px}
+
+/* Botones */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:12px 18px;border-radius:14px;font-weight:800;transition:.2s}
+.btn:active{transform:scale(.97)}
+.btn[disabled]{opacity:.5;pointer-events:none}
+.btn-red{background:linear-gradient(135deg,var(--red2),var(--red));color:#fff;box-shadow:0 8px 18px -6px rgba(225,25,49,.5)}
+.btn-dark{background:var(--ink);color:#fff}
+.btn-ghost{background:#F2F2F7;color:var(--ink)}
+.btn-green{background:var(--green);color:#fff}
+.btn-sm{padding:8px 12px;font-size:13px;border-radius:12px}
+.btn-block{width:100%;margin-top:18px}
+
+/* Layout */
+#app{display:flex;min-height:100%}
+.side{width:230px;flex:none;background:var(--ink);color:#fff;padding:20px 14px;display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh;overflow:auto}
+.brand{font-size:22px;font-weight:800;letter-spacing:-.8px;padding:4px 10px 16px}
+.brand span{color:var(--red2)}
+.nav{display:flex;align-items:center;gap:10px;padding:12px;border-radius:14px;font-weight:700;color:#B9B9C6;text-align:left;width:100%}
+.nav:hover{background:rgba(255,255,255,.07);color:#fff}
+.nav.on{background:var(--red);color:#fff}
+.nav .n{margin-left:auto;background:var(--red2);color:#fff;border-radius:10px;min-width:20px;text-align:center;font-size:11px;font-weight:800;padding:2px 6px}
+.nav.on .n{background:#fff;color:var(--red)}
+.who{margin-top:auto;padding:12px 10px 0;color:#9494A3;font-size:12px;font-weight:600;word-break:break-all}
+.main{flex:1;min-width:0;padding:22px 26px 60px}
+.bar{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.bar h1{font-size:26px;font-weight:800;letter-spacing:-.8px}
+.sp{flex:1}
+.banner{background:#FFF7E0;border:2px solid #FFE08A;color:#7A5500;border-radius:16px;padding:12px 16px;font-weight:700;margin-bottom:16px}
+.card{background:var(--card);border-radius:22px;padding:18px;box-shadow:var(--sh);margin-bottom:16px}
+.card h3{font-size:16px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;margin-bottom:16px}
+.kpi{background:#fff;border-radius:20px;padding:16px;box-shadow:var(--sh)}
+.kpi small{display:block;color:var(--mut);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.4px}
+.kpi b{display:block;font-size:24px;font-weight:800;letter-spacing:-.6px;margin-top:6px;font-variant-numeric:tabular-nums}
+.kpi.hot b{color:var(--red)}
+.kpi em{display:block;font-style:normal;color:var(--mut);font-size:12px;font-weight:600;margin-top:2px}
+#hmap,.mapbox{width:100%;height:340px;border-radius:18px;overflow:hidden;background:#e9e9ee}
+.mapbox{height:260px;margin-bottom:12px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.chip{padding:9px 14px;border-radius:20px;background:#fff;font-weight:700;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.chip.on{background:var(--ink);color:#fff}
+.search{width:100%;border:2px solid transparent;background:#fff;border-radius:16px;padding:13px 16px;outline:0;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.05);margin-bottom:12px}
+.search:focus{border-color:var(--red)}
+.row{display:flex;align-items:center;gap:12px;padding:12px;border-radius:16px;background:#fff;margin-bottom:8px;box-shadow:0 2px 8px rgba(0,0,0,.04);cursor:pointer;text-align:left;width:100%}
+.row:hover{box-shadow:0 6px 18px rgba(0,0,0,.09)}
+.row.sel{outline:2px solid var(--red)}
+.row .t{flex:1;min-width:0}
+.row b{display:block;font-weight:800}
+.row small{display:block;color:var(--mut);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .r{text-align:right;flex:none}
+.av{width:42px;height:42px;border-radius:15px;background:linear-gradient(135deg,var(--red2),var(--red));color:#fff;display:grid;place-items:center;font-weight:800;font-size:17px;flex:none}
+.badge{display:inline-block;padding:3px 9px;border-radius:9px;font-size:11px;font-weight:800;margin:3px 4px 0 0}
+.b-red{background:var(--tint);color:var(--redD)}.b-green{background:#E9F8EF;color:#0E7A3D}.b-gray{background:#EEE;color:#555}.b-amber{background:#FFF3D6;color:#8A5A00}.b-blue{background:#E6F0FF;color:#0A4FB8}.b-dark{background:var(--ink);color:#fff}
+.empty{color:var(--mut);font-weight:600;padding:16px;text-align:center}
+.bars{display:flex;align-items:flex-end;gap:10px;height:130px}
+.bars div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:5px}
+.bars i{display:block;width:100%;border-radius:8px 8px 3px 3px;background:linear-gradient(to top,var(--redD),var(--red2));min-height:4px}
+.bars span{font-size:11px;color:var(--mut);font-weight:700}
+.bars em{font-style:normal;font-size:11px;font-weight:800}
+
+/* Panel lateral */
+#panel{position:fixed;top:0;right:0;bottom:0;width:min(580px,100vw);background:var(--bg);z-index:50;box-shadow:-20px 0 60px rgba(0,0,0,.25);overflow-y:auto;transform:translateX(105%);transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+#panel.open{transform:none}
+#pscrim{position:fixed;inset:0;background:rgba(10,10,14,.45);z-index:49;display:none}
+.phead{display:flex;align-items:center;gap:14px;padding:20px;background:linear-gradient(150deg,var(--red2),var(--redD));color:#fff;position:relative}
+.phead .avb{width:62px;height:62px;border-radius:22px;background:#fff;color:var(--red);display:grid;place-items:center;font-weight:800;font-size:26px;overflow:hidden;flex:none}
+.phead .avb img{width:100%;height:100%;object-fit:cover}
+.phead b{font-size:20px;font-weight:800;display:block}
+.phead small{opacity:.9;font-weight:600;display:block}
+.phead .x{position:absolute;top:12px;right:14px;color:#fff;font-size:20px;font-weight:800;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.18)}
+.phead .badge{background:rgba(255,255,255,.2);color:#fff}
+.pbody{padding:16px}
+.acts{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.tabs{display:flex;gap:6px;margin-bottom:14px;overflow:auto}
+.tab{padding:10px 14px;border-radius:14px;font-weight:800;background:#fff;white-space:nowrap}
+.tab.on{background:var(--ink);color:#fff}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.kv div{background:#fff;border-radius:16px;padding:12px}
+.kv small{display:block;color:var(--mut);font-size:11px;font-weight:800;text-transform:uppercase}
+.kv b{display:block;font-size:17px;font-weight:800;margin-top:3px;word-break:break-word}
+.note{background:#fff;border-radius:16px;padding:14px;margin-bottom:10px}
+.note b{font-weight:800}
+.note p{margin-top:6px;line-height:1.45;font-weight:500}
+.note small{color:var(--mut);font-weight:600}
+.lock{background:var(--tint);border:2px solid #FFC9CE;color:var(--redD);border-radius:16px;padding:12px 14px;font-weight:700;margin-bottom:12px}
+
+/* Modal */
+#modal{position:fixed;inset:0;background:rgba(10,10,14,.55);z-index:90;display:none;align-items:center;justify-content:center;padding:16px}
+.mbox{background:#fff;border-radius:24px;padding:22px;width:min(440px,100%);max-height:90vh;overflow:auto}
+.mbox h3{font-size:19px;font-weight:800;margin-bottom:6px}
+.mbox p{color:var(--mut);font-weight:500;line-height:1.45;margin-bottom:6px}
+.mbox label{display:block;font-weight:800;font-size:12px;margin:12px 0 5px;text-transform:uppercase;letter-spacing:.4px;color:var(--mut)}
+.mbox input,.mbox select,.mbox textarea{width:100%;border:2px solid var(--line);background:#F7F7FA;border-radius:14px;padding:12px;outline:0;font-weight:600}
+.mbox input:focus,.mbox select:focus,.mbox textarea:focus{border-color:var(--red);background:#fff}
+.mact{display:flex;gap:10px;margin-top:18px}
+.mact .btn{flex:1}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:rgba(15,15,20,.95);color:#fff;padding:13px 20px;border-radius:20px;font-weight:700;z-index:100;display:none;max-width:90vw;text-align:center;box-shadow:0 12px 30px rgba(0,0,0,.3)}
+
+/* Soporte */
+.sup{display:grid;grid-template-columns:320px 1fr;gap:16px;height:calc(100vh - 120px);min-height:420px}
+.sup .lst{overflow:auto}
+.chat{background:#fff;border-radius:22px;display:flex;flex-direction:column;overflow:hidden;box-shadow:var(--sh)}
+.chat .ch{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.chat .ch b{display:block;font-weight:800}
+.chat .ch small{color:var(--mut);font-weight:600}
+.msgs{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
+.m{max-width:78%;padding:10px 14px;border-radius:18px;font-weight:500;line-height:1.4;word-wrap:break-word}
+.m small{display:block;font-size:11px;opacity:.65;margin-top:3px;font-weight:600}
+.m.me{align-self:flex-end;background:var(--red);color:#fff;border-bottom-right-radius:5px}
+.m.ot{align-self:flex-start;background:#fff;border-bottom-left-radius:5px}
+.qr{display:flex;gap:8px;overflow:auto;padding:10px 14px;border-top:1px solid var(--line)}
+.qr button{flex:none;background:var(--tint);color:var(--redD);font-weight:700;font-size:13px;padding:9px 14px;border-radius:18px}
+.cin{display:flex;gap:10px;padding:12px 14px;border-top:1px solid var(--line)}
+.cin input{flex:1;border:2px solid transparent;background:#F7F7FA;border-radius:22px;padding:12px 16px;outline:0;font-weight:600}
+.cin input:focus{border-color:var(--red)}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--red);flex:none}
+.back{display:none}
+textarea.big{width:100%;border:2px solid var(--line);background:#F7F7FA;border-radius:16px;padding:14px;outline:0;font-weight:600;min-height:130px;resize:vertical}
+textarea.big:focus{border-color:var(--red);background:#fff}
+
+@media(max-width:900px){
+  #app{flex-direction:column}
+  .side{width:100%;height:auto;position:sticky;z-index:40;flex-direction:row;overflow-x:auto;padding:10px;gap:6px;align-items:center}
+  .brand,.who{display:none}
+  .nav{width:auto;white-space:nowrap;padding:10px 14px}
+  .main{padding:16px 14px 60px}
+  .grid2{grid-template-columns:1fr}
+  .sup{grid-template-columns:1fr;height:calc(100vh - 150px)}
+  .sup.chatting .lst{display:none}
+  .sup:not(.chatting) .chat{display:none}
+  .back{display:inline-block}
+}
+</style>
+</head>
+<body>
+
+<div id="login">
+  <form class="lbox" id="lform" novalidate>
+    <h1>Moto <span style="color:var(--red)">Admin</span></h1>
+    <p>Acceso exclusivo del administrador.</p>
+    <label for="lm">Correo</label><input id="lm" type="email" autocomplete="email" placeholder="admin@correo.com">
+    <label for="lp">Contraseña</label><input id="lp" type="password" autocomplete="current-password" placeholder="••••••••">
+    <div class="lerr" id="lerr"></div>
+    <button class="btn btn-red btn-block" id="lgo" type="submit">Entrar al panel</button>
+  </form>
+</div>
+
+<div id="app" hidden>
+  <aside class="side">
+    <div class="brand">Moto <span>Admin</span></div>
+    <button class="nav on" data-act="nav" data-v="home">▣ Resumen</button>
+    <button class="nav" data-act="nav" data-v="rides">➜ Viajes <span class="n" id="nRides" hidden></span></button>
+    <button class="nav" data-act="nav" data-v="users">☻ Usuarios</button>
+    <button class="nav" data-act="nav" data-v="apps">✔ Solicitudes <span class="n" id="nApps" hidden></span></button>
+    <button class="nav" data-act="nav" data-v="support">✉ Soporte <span class="n" id="nSup" hidden></span></button>
+    <button class="nav" data-act="nav" data-v="reports">⚑ Reportes</button>
+    <button class="nav" data-act="nav" data-v="finance">$ Finanzas</button>
+    <button class="nav" data-act="nav" data-v="broadcast">☰ Difusión</button>
+    <button class="nav" data-act="nav" data-v="log">✎ Registro</button>
+    <div class="who"><span id="whoM"></span><br><button class="btn btn-ghost btn-sm" style="margin-top:8px;background:rgba(255,255,255,.1);color:#fff" data-act="logout">Cerrar sesión</button></div>
+  </aside>
+  <main class="main">
+    <div class="bar"><h1 id="vt">Resumen</h1><div class="sp"></div><button class="btn btn-ghost btn-sm" data-act="refresh">↻ Actualizar</button></div>
+    <div id="banner" class="banner" hidden></div>
+    <div id="view"></div>
+  </main>
+</div>
+
+<div id="pscrim" data-act="close"></div>
+<aside id="panel"></aside>
+<div id="modal"></div>
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const SUPABASE_URL='https://ixajhadihphpmhkllyvf.supabase.co';
+const SUPABASE_KEY='sb_publishable__QS2fmX09RyOEg3LMatd1A_DbQutV4u';
+const sb=window.supabase?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY):null;
+const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+
+const CUR={COP:{loc:'es-CO',dec:0},USD:{loc:'en-US',dec:2}};
+const money=(v,c)=>{c=c||'COP';const C=CUR[c]||CUR.COP;return new Intl.NumberFormat(C.loc,{style:'currency',currency:c,minimumFractionDigits:C.dec,maximumFractionDigits:C.dec}).format(+v||0)};
+const ACTIVE=['searching','pickup','trip','pay'];
+const ST={searching:['Buscando','b-amber'],pickup:['Recogida','b-blue'],trip:['En viaje','b-green'],pay:['Cobro','b-green'],done:['Completado','b-gray'],cancelled:['Cancelado','b-red']};
+const CATS=['Mal trato al pasajero','Conducción peligrosa','Cobro indebido','Cancelaciones abusivas','Vehículo o documentos','Incumplimiento de normas','Otro'];
+const SEV={baja:'b-gray',media:'b-amber',alta:'b-red'};
+const RIDE_COLS='id,passenger_id,driver_id,status,label,km,fare,currency,commission,created_at,finished_at,cancelled_by,from_lat,from_lng,to_lat,to_lng';
+const fmtT=t=>t?new Date(t).toLocaleString('es',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'—';
+const fmtD=t=>t?new Date(t).toLocaleDateString('es',{day:'numeric',month:'short',year:'numeric'}):'—';
+const sod=()=>{const d=new Date();d.setHours(0,0,0,0);return d.getTime()};
+const kmTxt=v=>(+v||0).toFixed(1)+' km';
+const waLink=p=>{let d=String(p||'').replace(/\D/g,'');if(d.length===10)d='57'+d;return d?'https://wa.me/'+d:'#'};
+
+const S={me:null,view:'home',apps:[],appF:'pending',appsReady:true,profiles:{},rides:[],stats:{},debts:{},pens:[],penBy:{},reports:[],sup:[],locs:{},log:[],avatars:{},drivers:new Set(),passengers:new Set(),
+  rideF:'active',userF:'drivers',q:'',rq:'',supThread:null,supQ:'',err:null,homeBuilt:false,hmap:null,homeFit:false};
+let P=null; /* panel abierto */
+
+/* ---------- utilidades de UI ---------- */
+function toast(m){const e=$('toast');e.textContent=m;e.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>e.style.display='none',3600)}
+function ask(o){return new Promise(res=>{
+  const m=$('modal');
+  m.innerHTML='<div class="mbox"><h3>'+esc(o.title)+'</h3>'+(o.body?'<p>'+o.body+'</p>':'')+
+   (o.fields||[]).map(f=>'<label>'+esc(f.label)+'</label>'+(f.type==='select'?'<select id="f_'+f.id+'">'+f.options.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('')+'</select>':f.type==='textarea'?'<textarea id="f_'+f.id+'" rows="4" placeholder="'+esc(f.ph||'')+'"></textarea>':'<input id="f_'+f.id+'" placeholder="'+esc(f.ph||'')+'">')).join('')+
+   '<div class="mact"><button class="btn btn-ghost" id="m_no">Cancelar</button><button class="btn '+(o.danger?'btn-red':'btn-dark')+'" id="m_ok">'+esc(o.ok||'Aceptar')+'</button></div></div>';
+  m.style.display='flex';
+  const done=v=>{m.style.display='none';m.innerHTML='';res(v)};
+  $('m_no').onclick=()=>done(null);
+  m.onclick=e=>{if(e.target===m)done(null)};
+  $('m_ok').onclick=()=>{const v={};for(const f of(o.fields||[])){v[f.id]=$('f_'+f.id).value.trim();if(f.req&&!v[f.id]){$('f_'+f.id).focus();toast(f.label+' es obligatorio');return}}done(v)};
+  const first=m.querySelector('input,textarea,select');if(first)first.focus();
+})}
+const fnMissing=e=>!!e&&(e.code==='PGRST202'||/could not find the function|schema cache/i.test(e.message||''));
+async function rpc(n,a){
+  const r=await sb.rpc(n,a);
+  if(r.error){const m=r.error.message||'';
+    if(/RIDE_NOT_FOUND/.test(m))toast('Ese viaje ya no está activo');
+    else{
+      const full=[r.error.message,r.error.details,r.error.hint,r.error.code?'(código '+r.error.code+')':''].filter(Boolean).join(' · ');
+      const hint=/NOT_ALLOWED/.test(m)?'No tienes permisos de administrador. Cierra sesión y entra de nuevo con el correo del administrador.':fnMissing(r.error)?'Falta instalar una función en Supabase (ejecutar el SQL).':'';
+      ask({title:'No se pudo completar la acción',body:(hint?esc(hint)+'<br><br>':'')+'<b>Mensaje del servidor:</b><br><code style="word-break:break-all;display:block;margin-top:6px;background:#F7F7FA;padding:10px;border-radius:10px;color:#0F0F14">'+esc(full)+'</code><br>Si no sabes qué significa, envíale una captura de este mensaje a Claude.',ok:'Entendido'});
+    }
+    return null}
+  return r;
+}
+const ava=n=>'<div class="av">'+esc((n||'?')[0].toUpperCase())+'</div>';
+const badge=(t,c)=>'<span class="badge '+(c||'b-gray')+'">'+esc(t)+'</span>';
+const nameOf=id=>id?(S.profiles[id]?S.profiles[id].name:'Usuario'):'—';
+
+/* ---------- deuda ---------- */
+function debtOf(uid){
+  const o={COP:0,USD:0};
+  Object.entries(S.debts[uid]||{}).forEach(([c,v])=>o[c]=(o[c]||0)+v);
+  (S.penBy[uid]||[]).filter(p=>p.role==='driver').forEach(p=>o[p.currency]=(o[p.currency]||0)+ +p.amount);
+  return o;
+}
+const hasDebt=o=>Object.values(o).some(v=>v>0);
+const debtTxt=o=>{const t=Object.keys(o).filter(c=>o[c]>0).map(c=>money(o[c],c));return t.length?t.join(' + '):'$0'};
+const legs=x=>{try{if(typeof x==='string')x=JSON.parse(x)}catch(e){x=null}return Array.isArray(x)?x.filter(c=>Array.isArray(c)&&c.length>=2):[]};
+
+/* ---------- mapas ---------- */
+const MSTYLE={version:8,sources:{osm:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap'}},layers:[{id:'osm',type:'raster',source:'osm'}]};
+function mkMap(el){
+  if(!window.maplibregl||!el)return null;
+  const m=new maplibregl.Map({container:el,style:MSTYLE,center:[-74.07,4.71],zoom:11,attributionControl:{compact:true}});
+  m.addControl(new maplibregl.NavigationControl({showCompass:false}),'top-right');
+  m._mk=[];m._q=[];m._ready=false;
+  m.once('load',()=>{m._ready=true;m._q.forEach(f=>f());m._q=[]});
+  return m;
+}
+const onMap=(m,f)=>{if(!m)return;m._ready?f():m._q.push(f)};
+function clearMk(m){(m._mk||[]).forEach(x=>x.remove());m._mk=[]}
+function dot(m,lng,lat,color,label,big){
+  const d=document.createElement('div');
+  const s=big?20:16;
+  d.style.cssText='width:'+s+'px;height:'+s+'px;border-radius:50%;background:'+color+';border:3px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.4)';
+  const mk=new maplibregl.Marker({element:d}).setLngLat([lng,lat]);
+  if(label)mk.setPopup(new maplibregl.Popup({offset:14,closeButton:false}).setText(label));
+  mk.addTo(m);m._mk.push(mk);return mk;
+}
+function drawRide(m,r,loc){
+  if(!m||!r)return;
+  onMap(m,()=>{
+    clearMk(m);
+    ['la','lb'].forEach(id=>{if(m.getLayer(id))m.removeLayer(id);if(m.getSource(id))m.removeSource(id)});
+    const la=legs(r.leg_a);let lb=legs(r.leg_b);
+    if(lb.length<2)lb=[[r.from_lng,r.from_lat],[r.to_lng,r.to_lat]];
+    const pts=[];
+    const add=(id,c,color,dash)=>{
+      if(c.length<2)return;
+      m.addSource(id,{type:'geojson',data:{type:'Feature',geometry:{type:'LineString',coordinates:c}}});
+      const paint={'line-color':color,'line-width':5};if(dash)paint['line-dasharray']=[2,2];
+      m.addLayer({id,type:'line',source:id,layout:{'line-cap':'round','line-join':'round'},paint});
+      c.forEach(p=>pts.push(p));
+    };
+    add('la',la,'#0A63E8',true);add('lb',lb,'#E11931',false);
+    dot(m,r.from_lng,r.from_lat,'#18b25b','Recogida');
+    dot(m,r.to_lng,r.to_lat,'#0F0F14','Destino: '+(r.label||''));
+    pts.push([r.from_lng,r.from_lat],[r.to_lng,r.to_lat]);
+    if(loc&&loc.lat!=null){dot(m,loc.lng,loc.lat,'#E11931','Conductor ahora',true);pts.push([loc.lng,loc.lat])}
+    const b=new maplibregl.LngLatBounds();pts.forEach(p=>b.extend(p));
+    if(!b.isEmpty())m.fitBounds(b,{padding:50,duration:500,maxZoom:16});
+  });
+}
+
+/* ---------- carga de datos ---------- */
+let loading=false;
+async function loadAll(){
+  if(!sb||loading)return;loading=true;
+  const since=new Date(Date.now()-60*864e5).toISOString();
+  const q=await Promise.all([
+    sb.from('profiles').select('id,name,phone,email,blocked,blocked_reason,blocked_at,created_at').limit(3000),
+    sb.from('rides').select(RIDE_COLS).gte('created_at',since).order('created_at',{ascending:false}).limit(1500),
+    sb.rpc('admin_driver_stats'),
+    sb.rpc('admin_debts'),
+    sb.from('penalties').select('*').eq('paid',false).limit(1000),
+    sb.from('driver_reports').select('*').order('created_at',{ascending:false}).limit(500),
+    sb.from('support_messages').select('*').order('created_at',{ascending:false}).limit(800),
+    sb.from('driver_locations').select('*'),
+    sb.from('admin_log').select('*').order('created_at',{ascending:false}).limit(150),
+    sb.from('driver_applications').select('*').order('submitted_at',{ascending:false}).limit(300)
+  ]);
+  const names=['profiles','rides','admin_driver_stats','admin_debts','penalties','driver_reports','support_messages','driver_locations','admin_log','driver_applications'];
+  const errs=[];q.forEach((r,i)=>{if(r.error&&!(i===9&&/relation|does not exist|schema cache/i.test(r.error.message||'')))errs.push(names[i]+': '+(r.error.message||r.error.code))});
+  S.appsReady=!q[9].error;
+  const d=i=>(q[i].error?null:q[i].data)||[];
+  S.profiles={};d(0).forEach(p=>S.profiles[p.id]=p);
+  S.rides=d(1);
+  S.stats={};d(2).forEach(x=>{const s=S.stats[x.driver_id]||(S.stats[x.driver_id]={trips:0,cancelled:0,last:null,gross:{},com:{}});
+    s.trips+=+x.trips;s.cancelled+=+x.cancelled;s.gross[x.currency]=(s.gross[x.currency]||0)+ +x.gross;s.com[x.currency]=(s.com[x.currency]||0)+ +x.commission;
+    if(x.last_at&&(!s.last||Date.parse(x.last_at)>s.last))s.last=Date.parse(x.last_at)});
+  S.debts={};d(3).forEach(x=>{(S.debts[x.driver_id]=S.debts[x.driver_id]||{})[x.currency]=+x.debt});
+  S.pens=d(4);S.penBy={};S.pens.forEach(p=>(S.penBy[p.user_id]=S.penBy[p.user_id]||[]).push(p));
+  S.reports=d(5);
+  const sm=d(6).slice().reverse();
+  if(!q[6].error){S.sup=sm}
+  S.locs={};d(7).forEach(l=>{if(l.ride_id)S.locs[l.ride_id]=l});
+  S.log=d(8);
+  S.apps=d(9);
+  S.drivers=new Set(Object.keys(S.stats));S.passengers=new Set();
+  S.rides.forEach(r=>{if(r.driver_id)S.drivers.add(r.driver_id);if(r.passenger_id)S.passengers.add(r.passenger_id)});
+  S.err=errs.length?errs:null;
+  loading=false;
+  const bn=$('banner');
+  if(errs.length){bn.hidden=false;bn.innerHTML='Algunas consultas fallaron. ¿Ya ejecutaste <b>admin_setup.sql</b> en Supabase? <br><small>'+esc(errs.slice(0,3).join(' · '))+'</small>'}else bn.hidden=true;
+  navBadges();
+}
+function navBadges(){
+  const n=rideAct().length,u=supUnread();
+  $('nRides').hidden=!n;$('nRides').textContent=n;
+  $('nSup').hidden=!u;$('nSup').textContent=u;
+  const pa=(S.apps||[]).filter(a=>a.status==='pending').length;
+  $('nApps').hidden=!pa;$('nApps').textContent=pa;
+  document.title=((u+pa)?'('+(u+pa)+') ':'')+'Moto · Panel de administrador';
+}
+const rideAct=()=>S.rides.filter(r=>ACTIVE.includes(r.status));
+
+/* ---------- navegación ---------- */
+const TITLES={home:'Resumen',rides:'Viajes',users:'Usuarios',apps:'Solicitudes de socios',support:'Soporte',reports:'Reportes',finance:'Finanzas',broadcast:'Difusión',log:'Registro de acciones'};
+function go(v){
+  if(v!==S.view){if(S.hmap){try{S.hmap.remove()}catch(e){}S.hmap=null}S.homeBuilt=false;S.homeFit=false}
+  S.view=v;S.q='';S.rq='';
+  document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('on',n.dataset.v===v));
+  $('vt').textContent=TITLES[v];render(true);
+}
+function render(force){
+  const v=S.view;
+  if(v==='home')renderHome();
+  else if(v==='rides')renderRides();
+  else if(v==='users')renderUsers();
+  else if(v==='apps')renderApps();
+  else if(v==='support')renderSupport();
+  else if(v==='reports')renderReports();
+  else if(v==='finance')renderFinance();
+  else if(v==='broadcast'){if(force)renderBroadcast()}
+  else if(v==='log')renderLog();
+  navBadges();
+}
+
+/* ---------- RESUMEN ---------- */
+function renderHome(){
+  const v=$('view');
+  if(!S.homeBuilt||!$('hmap')){
+    v.innerHTML='<div class="kpis" id="kpis"></div><div class="grid2"><div class="card"><h3>Mapa en vivo</h3><div id="hmap"></div></div><div class="card"><h3>Viajes en curso</h3><div id="hact"></div></div></div><div class="card"><h3>Viajes completados · últimos 7 días</h3><div class="bars" id="hbars"></div></div>';
+    S.homeBuilt=true;S.hmap=mkMap($('hmap'));S.homeFit=false;
+  }
+  const t0=sod(),done=S.rides.filter(r=>r.status==='done'&&Date.parse(r.finished_at)>=t0);
+  const by=(arr,k)=>{const o={};arr.forEach(r=>o[r.currency]=(o[r.currency]||0)+ +r[k]);return o};
+  const fm=o=>{const t=Object.keys(o).map(c=>money(o[c],c));return t.length?t.join(' · '):'$0'};
+  const tot={};S.drivers.forEach(id=>{const d=debtOf(id);Object.keys(d).forEach(c=>tot[c]=(tot[c]||0)+d[c])});
+  const blocked=Object.values(S.profiles).filter(p=>p.blocked).length;
+  const canc=S.rides.filter(r=>r.status==='cancelled'&&Date.parse(r.created_at)>=t0).length;
+  const k=(l,b,e,hot)=>'<div class="kpi'+(hot?' hot':'')+'"><small>'+l+'</small><b>'+b+'</b>'+(e?'<em>'+e+'</em>':'')+'</div>';
+  $('kpis').innerHTML=
+    k('Viajes activos',rideAct().length,rideAct().filter(r=>r.status==='searching').length+' buscando moto',rideAct().length>0)+
+    k('Completados hoy',done.length,canc+' cancelados hoy')+
+    k('Ingresos brutos hoy',fm(by(done,'fare')),'')+
+    k('Comisión hoy',fm(by(done,'commission')),'20% de cada viaje')+
+    k('Deuda total conductores',fm(tot),'por cobrar',true)+
+    k('Usuarios',Object.keys(S.profiles).length,S.drivers.size+' conductores')+
+    k('Bloqueados',blocked,'')+
+    k('Solicitudes de socios',S.apps.filter(a=>a.status==='pending').length,'pendientes de revisar',S.apps.some(a=>a.status==='pending'))+
+    k('Mensajes sin leer',supUnread(),'');
+  const act=rideAct().sort((a,b)=>Date.parse(b.created_at)-Date.parse(a.created_at));
+  $('hact').innerHTML=act.length?act.slice(0,12).map(rideRow).join(''):'<div class="empty">No hay viajes en curso.</div>';
+  /* gráfico */
+  const days=[];for(let i=6;i>=0;i--){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-i);days.push(d.getTime())}
+  const cnt=days.map((s,i)=>S.rides.filter(r=>r.status==='done'&&Date.parse(r.finished_at)>=s&&Date.parse(r.finished_at)<s+864e5).length);
+  const mx=Math.max(...cnt,1);
+  $('hbars').innerHTML=days.map((s,i)=>'<div><em>'+cnt[i]+'</em><i style="height:'+Math.max(4,cnt[i]/mx*90)+'px"></i><span>'+new Date(s).toLocaleDateString('es',{weekday:'short'})+'</span></div>').join('');
+  updateHomeMap();
+}
+function updateHomeMap(){
+  const m=S.hmap;if(!m)return;
+  onMap(m,()=>{
+    clearMk(m);const pts=[];
+    rideAct().forEach(r=>{
+      const l=S.locs[r.id];
+      if(r.status==='searching'){dot(m,r.from_lng,r.from_lat,'#F5A100','Buscando moto · '+nameOf(r.passenger_id)+' · '+money(r.fare,r.currency));pts.push([r.from_lng,r.from_lat])}
+      else if(l&&l.lat!=null){dot(m,l.lng,l.lat,'#E11931',nameOf(r.driver_id)+' · '+(ST[r.status]||[r.status])[0],true);pts.push([l.lng,l.lat])}
+      else{dot(m,r.from_lng,r.from_lat,'#18b25b',nameOf(r.driver_id)+' · '+(ST[r.status]||[r.status])[0]);pts.push([r.from_lng,r.from_lat])}
+    });
+    if(pts.length&&!S.homeFit){const b=new maplibregl.LngLatBounds();pts.forEach(p=>b.extend(p));m.fitBounds(b,{padding:60,maxZoom:15,duration:400});S.homeFit=true}
+  });
+}
+
+/* ---------- VIAJES ---------- */
+function rideRow(r){
+  const s=ST[r.status]||[r.status,'b-gray'];
+  return '<button class="row" data-act="ride" data-id="'+r.id+'"><div class="t"><b>'+esc((r.label||'').split(', ')[0]||'Viaje')+'</b><small>'+esc(nameOf(r.passenger_id))+' → '+esc(r.driver_id?nameOf(r.driver_id):'sin conductor')+' · '+fmtT(r.created_at)+'</small></div><div class="r">'+badge(s[0],s[1])+'<small>'+money(r.fare,r.currency)+'</small></div></button>';
+}
+const RF=[['active','Activos'],['today','Hoy'],['done','Completados'],['cancelled','Cancelados'],['all','Todos']];
+function renderRides(){
+  $('view').innerHTML='<div class="chips">'+RF.map(f=>'<button class="chip'+(S.rideF===f[0]?' on':'')+'" data-act="rf" data-f="'+f[0]+'">'+f[1]+'</button>').join('')+'</div><input class="search" id="rq" placeholder="Buscar por pasajero, conductor o destino…" value="'+esc(S.rq)+'"><div id="rlist"></div>';
+  $('rq').oninput=e=>{S.rq=e.target.value;fillRides()};fillRides();
+}
+function fillRides(){
+  const q=S.rq.toLowerCase(),t0=sod();
+  let l=S.rides.filter(r=>S.rideF==='active'?ACTIVE.includes(r.status):S.rideF==='today'?Date.parse(r.created_at)>=t0:S.rideF==='all'?true:r.status===S.rideF);
+  if(q)l=l.filter(r=>((r.label||'')+' '+nameOf(r.passenger_id)+' '+nameOf(r.driver_id)).toLowerCase().includes(q));
+  $('rlist').innerHTML=l.length?l.slice(0,200).map(rideRow).join(''):'<div class="empty">No hay viajes con este filtro.</div>';
+}
+
+/* ---------- USUARIOS ---------- */
+const UF=[['drivers','Conductores'],['passengers','Pasajeros'],['all','Todos'],['blocked','Bloqueados'],['debt','Con deuda']];
+function renderUsers(){
+  $('view').innerHTML='<div class="chips">'+UF.map(f=>'<button class="chip'+(S.userF===f[0]?' on':'')+'" data-act="uf" data-f="'+f[0]+'">'+f[1]+'</button>').join('')+'</div><input class="search" id="uq" placeholder="Buscar por nombre, correo o teléfono…" value="'+esc(S.q)+'"><div id="ulist"></div>';
+  $('uq').oninput=e=>{S.q=e.target.value;fillUsers()};fillUsers();
+}
+function fillUsers(){
+  const q=S.q.toLowerCase();
+  let l=Object.values(S.profiles).filter(p=>{
+    if(S.userF==='drivers')return S.drivers.has(p.id);
+    if(S.userF==='passengers')return S.passengers.has(p.id);
+    if(S.userF==='blocked')return p.blocked;
+    if(S.userF==='debt')return hasDebt(debtOf(p.id));
+    return true});
+  if(q)l=l.filter(p=>((p.name||'')+' '+(p.email||'')+' '+(p.phone||'')).toLowerCase().includes(q));
+  if(S.userF==='debt')l.sort((a,b)=>Object.values(debtOf(b.id)).reduce((x,y)=>x+y,0)-Object.values(debtOf(a.id)).reduce((x,y)=>x+y,0));
+  else l.sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+  $('ulist').innerHTML=l.length?l.slice(0,250).map(p=>{
+    const d=debtOf(p.id),s=S.stats[p.id],act=rideAct().some(r=>r.driver_id===p.id||r.passenger_id===p.id);
+    return '<button class="row" data-act="user" data-id="'+p.id+'">'+ava(p.name)+'<div class="t"><b>'+esc(p.name||'Usuario')+'</b><small>'+esc(p.phone||'')+' · '+esc(p.email||'')+'</small><div>'+
+      (S.drivers.has(p.id)?badge('Conductor','b-dark'):'')+(S.passengers.has(p.id)?badge('Pasajero','b-blue'):'')+(p.blocked?badge('Bloqueado','b-red'):'')+(hasDebt(d)?badge('Debe '+debtTxt(d),'b-amber'):'')+(act?badge('En viaje','b-green'):'')+
+      '</div></div><div class="r"><b>'+(s?s.trips:0)+'</b><small>viajes</small></div></button>'}).join(''):'<div class="empty">Sin resultados.</div>';
+}
+
+/* ---------- PANEL: USUARIO ---------- */
+function killPanelMap(keepTimer){if(P&&P.map){try{P.map.remove()}catch(e){}P.map=null}if(!keepTimer&&P&&P.t){clearInterval(P.t);P.t=null}}
+function showPanel(){$('panel').classList.add('open');$('pscrim').style.display='block'}
+function closePanel(){killPanelMap();P=null;$('panel').classList.remove('open');$('pscrim').style.display='none'}
+async function openUser(uid,tab){
+  killPanelMap();P={type:'user',id:uid,tab:tab||'sum',sel:null,rides:null,map:null};showPanel();renderUser();
+  if(!(uid in S.avatars)){sb.from('profiles').select('avatar').eq('id',uid).maybeSingle().then(({data})=>{S.avatars[uid]=(data&&data.avatar)||'';if(P&&P.type==='user'&&P.id===uid)renderUser()})}
+  const r=await sb.from('rides').select(RIDE_COLS).or('driver_id.eq.'+uid+',passenger_id.eq.'+uid).order('created_at',{ascending:false}).limit(80);
+  if(P&&P.type==='user'&&P.id===uid){P.rides=r.error?[]:r.data;renderUser()}
+}
+function renderUser(){
+  if(!P||P.type!=='user')return;
+  const uid=P.id,p=S.profiles[uid]||{id:uid,name:'Usuario'},d=debtOf(uid),st=S.stats[uid]||{trips:0,cancelled:0,gross:{},com:{}};
+  const act=S.rides.find(r=>ACTIVE.includes(r.status)&&(r.driver_id===uid||r.passenger_id===uid));
+  const av=S.avatars[uid],reps=S.reports.filter(r=>r.user_id===uid),pens=S.penBy[uid]||[];
+  killPanelMap();
+  let h='<div class="phead"><button class="x" data-act="close">✕</button><div class="avb">'+(av?'<img src="'+esc(av)+'">':esc((p.name||'?')[0].toUpperCase()))+'</div><div><b>'+esc(p.name||'Usuario')+'</b><small>'+esc(p.phone||'')+'</small><small>'+esc(p.email||'')+'</small><div>'+
+    (S.drivers.has(uid)?badge('Conductor'):'')+(S.passengers.has(uid)?badge('Pasajero'):'')+(p.blocked?badge('BLOQUEADO'):'')+'</div></div></div><div class="pbody">';
+  h+='<div class="acts"><button class="btn btn-dark btn-sm" data-act="chat" data-id="'+uid+'">✉ Chatear</button><a class="btn btn-green btn-sm" target="_blank" rel="noopener" href="'+waLink(p.phone)+'">WhatsApp</a>'+
+    '<button class="btn '+(p.blocked?'btn-green':'btn-red')+' btn-sm" data-act="block" data-id="'+uid+'">'+(p.blocked?'Desbloquear':'Bloquear')+'</button>'+
+    (hasDebt(d)?'<button class="btn btn-red btn-sm" data-act="clear" data-id="'+uid+'">Quitar toda la deuda</button>':'')+
+    (act?'<button class="btn btn-ghost btn-sm" data-act="cancel" data-id="'+act.id+'">Cancelar su viaje activo</button>':'')+
+    '<button class="btn btn-ghost btn-sm" data-act="report" data-id="'+uid+'">⚑ Nuevo reporte</button></div>';
+  if(p.blocked)h+='<div class="lock">Bloqueado '+fmtT(p.blocked_at)+(p.blocked_reason?' · Motivo: '+esc(p.blocked_reason):'')+'</div>';
+  h+='<div class="tabs">'+[['sum','Resumen'],['trips','Viajes y ruta'],['reps','Reportes ('+reps.length+')'],['pay','Cobros']].map(t=>'<button class="tab'+(P.tab===t[0]?' on':'')+'" data-act="utab" data-t="'+t[0]+'">'+t[1]+'</button>').join('')+'</div>';
+  const cs=o=>{const t=Object.keys(o||{}).filter(c=>o[c]>0).map(c=>money(o[c],c));return t.length?t.join(' + '):'$0'};
+  if(P.tab==='sum'){
+    const asP=S.rides.filter(r=>r.passenger_id===uid).length;
+    h+='<div class="kv"><div><small>Viajes como conductor</small><b>'+st.trips+'</b></div><div><small>Viajes como pasajero (60 d)</small><b>'+asP+'</b></div><div><small>Ganado bruto</small><b>'+cs(st.gross)+'</b></div><div><small>Comisión generada</small><b>'+cs(st.com)+'</b></div><div><small>Deuda actual</small><b style="color:'+(hasDebt(d)?'var(--red)':'inherit')+'">'+debtTxt(d)+'</b></div><div><small>Cancelaciones propias</small><b>'+st.cancelled+'</b></div><div><small>Último viaje</small><b>'+fmtT(st.last)+'</b></div><div><small>Registro</small><b>'+fmtD(p.created_at)+'</b></div></div>';
+    if(reps.length)h+='<div class="note"><b>Último reporte</b> '+badge(reps[0].severity,SEV[reps[0].severity])+'<p>'+esc(reps[0].note)+'</p><small>'+esc(reps[0].category)+' · '+fmtT(reps[0].created_at)+'</small></div>';
+  }else if(P.tab==='trips'){
+    h+='<div class="mapbox" id="pmap"></div>';
+    if(!P.rides)h+='<div class="empty">Cargando viajes…</div>';
+    else h+=P.rides.length?P.rides.map(r=>{const s=ST[r.status]||[r.status,'b-gray'];return '<button class="row'+(P.sel===r.id?' sel':'')+'" data-act="sel" data-id="'+r.id+'"><div class="t"><b>'+esc((r.label||'').split(', ')[0]||'Viaje')+'</b><small>'+(r.driver_id===uid?'Como conductor':'Como pasajero')+' · '+fmtT(r.created_at)+'</small></div><div class="r">'+badge(s[0],s[1])+'<small>'+money(r.fare,r.currency)+'</small></div></button>'}).join(''):'<div class="empty">Sin viajes.</div>';
+  }else if(P.tab==='reps'){
+    h+=reps.length?reps.map(repCard).join(''):'<div class="empty">Este usuario no tiene reportes.</div>';
+    h+='<button class="btn btn-red btn-block" data-act="report" data-id="'+uid+'">⚑ Crear reporte</button>';
+  }else{
+    h+='<div class="kv"><div><small>Deuda total</small><b style="color:var(--red)">'+debtTxt(d)+'</b></div><div><small>Cobros por cancelación</small><b>'+pens.length+'</b></div></div>';
+    h+=pens.length?pens.map(x=>'<div class="note"><b>'+money(+x.amount,x.currency)+'</b> '+badge(x.role==='driver'?'Como conductor':'Como pasajero','b-amber')+'<p>Cancelación en viaje (60%) · '+fmtT(x.created_at)+'</p><button class="btn btn-ghost btn-sm" style="margin-top:8px" data-act="settle" data-id="'+x.id+'">Marcar como pagado</button></div>').join(''):'<div class="empty">Sin cobros pendientes.</div>';
+    if(hasDebt(d))h+='<button class="btn btn-red btn-block" data-act="clear" data-id="'+uid+'">Quitar toda la deuda</button>';
+  }
+  h+='</div>';
+  $('panel').innerHTML=h;
+  if(P.tab==='trips'){
+    P.map=mkMap($('pmap'));
+    const first=P.sel||(P.rides&&P.rides[0]&&P.rides[0].id);
+    if(first)selRide(first);
+  }
+}
+async function selRide(id){
+  if(!P)return;P.sel=id;
+  document.querySelectorAll('#panel .row').forEach(r=>r.classList.toggle('sel',r.dataset.id===id));
+  const{data}=await sb.from('rides').select('*').eq('id',id).maybeSingle();
+  if(!data||!P||P.sel!==id)return;
+  let loc=null;
+  if(ACTIVE.includes(data.status)){const l=await sb.from('driver_locations').select('*').eq('ride_id',id).maybeSingle();loc=l.data}
+  drawRide(P.map,data,loc);
+}
+const repCard=r=>'<div class="note"><b>'+esc(r.category)+'</b> '+badge(r.severity,SEV[r.severity])+'<p>'+esc(r.note)+'</p><small>'+fmtT(r.created_at)+(r.ride_id?' · viaje '+esc(String(r.ride_id).slice(0,8)):'')+'</small><div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">'+(r.ride_id?'<button class="btn btn-ghost btn-sm" data-act="ride" data-id="'+r.ride_id+'">Ver viaje</button>':'')+'<button class="btn btn-ghost btn-sm" data-act="delrep" data-id="'+r.id+'">Eliminar</button></div></div>';
+
+/* ---------- PANEL: VIAJE ---------- */
+async function openRide(id){
+  killPanelMap();P={type:'ride',id,map:null,t:null};showPanel();
+  $('panel').innerHTML='<div class="phead"><button class="x" data-act="close">✕</button><div><b>Cargando viaje…</b></div></div>';
+  const{data:r,error}=await sb.from('rides').select('*').eq('id',id).maybeSingle();
+  if(!P||P.id!==id)return;
+  if(error||!r){$('panel').innerHTML='<div class="phead"><button class="x" data-act="close">✕</button><div><b>Viaje no encontrado</b></div></div>';return}
+  const ids=[r.passenger_id,r.driver_id].filter(x=>x&&!S.profiles[x]);
+  if(ids.length){const q=await sb.from('profiles').select('id,name,phone,email,blocked').in('id',ids);(q.data||[]).forEach(p=>S.profiles[p.id]=p)}
+  const mq=await sb.from('messages').select('*').eq('ride_id',id).order('created_at');
+  P.r=r;P.msgs=mq.data||[];
+  renderRide();
+  pollRideLoc();P.t=setInterval(pollRideLoc,4000);
+}
+async function pollRideLoc(){
+  if(!P||P.type!=='ride')return;
+  const id=P.id,{data:r}=await sb.from('rides').select('*').eq('id',id).maybeSingle();
+  if(!P||P.id!==id||!r)return;
+  const changed=!P.r||P.r.status!==r.status;P.r=r;
+  let loc=null;
+  if(ACTIVE.includes(r.status)){const l=await sb.from('driver_locations').select('*').eq('ride_id',id).maybeSingle();loc=l.data}
+  if(changed)renderRide();else drawRide(P.map,r,loc);
+}
+function renderRide(){
+  if(!P||P.type!=='ride')return;
+  const r=P.r,s=ST[r.status]||[r.status,'b-gray'],act=ACTIVE.includes(r.status);
+  const pa=S.profiles[r.passenger_id]||{name:'Pasajero'},dr=r.driver_id?(S.profiles[r.driver_id]||{name:'Conductor'}):null;
+  killPanelMap(true);
+  let h='<div class="phead"><button class="x" data-act="close">✕</button><div><b>'+esc((r.label||'Viaje').split(', ')[0])+'</b><small>'+esc(r.label||'')+'</small><div>'+badge(s[0])+badge(money(r.fare,r.currency))+badge(kmTxt(r.km))+'</div></div></div><div class="pbody">';
+  h+='<div class="acts">'+(act?'<button class="btn btn-red btn-sm" data-act="cancel" data-id="'+r.id+'">Cancelar este viaje</button>':'')+(dr?'<button class="btn btn-dark btn-sm" data-act="user" data-id="'+r.driver_id+'">Ver conductor</button><button class="btn btn-ghost btn-sm" data-act="report" data-id="'+r.driver_id+'" data-ride="'+r.id+'">⚑ Reportar conductor</button>':'')+'<button class="btn btn-ghost btn-sm" data-act="user" data-id="'+r.passenger_id+'">Ver pasajero</button></div>';
+  h+='<div class="mapbox" id="pmap"></div><div class="kv"><div><small>Pasajero</small><b>'+esc(pa.name)+'</b></div><div><small>Conductor</small><b>'+esc(dr?dr.name:'—')+'</b></div><div><small>Creado</small><b>'+fmtT(r.created_at)+'</b></div><div><small>Finalizado</small><b>'+fmtT(r.finished_at)+'</b></div><div><small>Comisión</small><b>'+(r.commission!=null?money(r.commission,r.currency):'—')+'</b></div><div><small>Cancelado por</small><b>'+(r.status==='cancelled'?(r.cancelled_by?(r.cancelled_by===S.me.id?'Administrador':esc(nameOf(r.cancelled_by))):'Expiró'):'—')+'</b></div></div>';
+  h+='<div class="card" style="padding:14px"><h3>Chat del viaje</h3>'+(P.msgs.length?P.msgs.map(m=>'<div class="note" style="margin-bottom:6px;padding:10px"><b>'+esc(nameOf(m.sender_id))+'</b><p style="margin-top:2px">'+esc(m.text)+'</p><small>'+fmtT(m.created_at)+'</small></div>').join(''):'<div class="empty">Sin mensajes.</div>')+'</div></div>';
+  $('panel').innerHTML=h;
+  P.map=mkMap($('pmap'));
+  (async()=>{let loc=null;if(act){const l=await sb.from('driver_locations').select('*').eq('ride_id',r.id).maybeSingle();loc=l.data}
+    const{data:full}=await sb.from('rides').select('*').eq('id',r.id).maybeSingle();drawRide(P&&P.map,full||r,loc)})();
+}
+
+/* ---------- ACCIONES ---------- */
+async function afterAction(){await loadAll();render(false);if(P&&P.type==='user')renderUser()}
+async function doBlock(uid){
+  const p=S.profiles[uid]||{name:'Usuario'};
+  if(p.blocked){
+    const v=await ask({title:'Desbloquear a '+p.name,body:'Podrá volver a pedir y aceptar viajes.',ok:'Desbloquear'});if(!v)return;
+    if(!await rpc('admin_set_block',{p_user:uid,p_blocked:false,p_reason:null}))return;
+    toast('Usuario desbloqueado');
+  }else{
+    const v=await ask({title:'Bloquear a '+p.name,body:'Se cancelarán sus viajes activos y no podrá pedir ni aceptar más viajes.',danger:1,ok:'Bloquear',fields:[{id:'reason',label:'Motivo (lo verá el usuario)',type:'textarea',ph:'Ej: Reportes de mal trato',req:1}]});if(!v)return;
+    const rb=await rpc('admin_set_block',{p_user:uid,p_blocked:true,p_reason:v.reason});if(!rb)return;
+    if(rb.data&&rb.data.warning)toast('Usuario bloqueado, pero no se pudieron cancelar sus viajes activos: '+rb.data.warning);
+    else toast('Usuario bloqueado');
+  }
+  afterAction();
+}
+async function doClear(uid){
+  const p=S.profiles[uid]||{name:'Conductor'},d=debtOf(uid);
+  const v=await ask({title:'Quitar toda la deuda',body:esc(p.name)+' debe <b>'+esc(debtTxt(d))+'</b>. Se pondrá en $0 y los cobros por cancelación quedarán como pagados. Esta acción queda registrada.',danger:1,ok:'Sí, quitar deuda'});if(!v)return;
+  if(!await rpc('admin_clear_debt',{p_user:uid}))return;
+  toast('Deuda eliminada');afterAction();
+}
+async function doCancel(id){
+  const v=await ask({title:'Cancelar viaje',body:'Se cancela sin cobro para nadie. Ambos verán el viaje como cancelado.',danger:1,ok:'Cancelar viaje',fields:[{id:'note',label:'Nota interna (opcional)',type:'text'}]});if(!v)return;
+  if(!await rpc('admin_cancel_ride',{p_ride:id,p_note:v.note||null}))return;
+  toast('Viaje cancelado');
+  if(P&&P.type==='ride'){await loadAll();render(false);openRide(id)}else afterAction();
+}
+async function doReport(uid,rideId){
+  const p=S.profiles[uid]||{name:'Usuario'};
+  const v=await ask({title:'Reporte para '+p.name,body:'Se guarda en su perfil. Solo tú lo ves.',ok:'Guardar reporte',fields:[{id:'cat',label:'Categoría',type:'select',options:CATS},{id:'sev',label:'Gravedad',type:'select',options:['baja','media','alta']},{id:'note',label:'Descripción',type:'textarea',ph:'Qué pasó…',req:1}]});if(!v)return;
+  if(!await rpc('admin_add_report',{p_user:uid,p_ride:rideId||null,p_category:v.cat,p_severity:v.sev,p_note:v.note}))return;
+  toast('Reporte guardado');
+  if(P&&P.type==='user'){P.tab='reps'}
+  await loadAll();render(false);
+  if(P&&P.type==='user')renderUser();else if(P&&P.type==='ride')renderRide();
+}
+async function doDelRep(id){
+  const v=await ask({title:'Eliminar reporte',body:'Se borra del perfil del usuario.',danger:1,ok:'Eliminar'});if(!v)return;
+  if(!await rpc('admin_delete_report',{p_id:id}))return;toast('Reporte eliminado');
+  await loadAll();render(false);if(P&&P.type==='user')renderUser();
+}
+async function doSettle(id){
+  if(!await rpc('admin_settle_penalty',{p_id:id}))return;toast('Cobro marcado como pagado');afterAction();
+}
+
+/* ---------- SOLICITUDES DE SOCIOS ---------- */
+const AF=[['pending','Pendientes'],['approved','Aprobadas'],['rejected','Rechazadas'],['all','Todas']];
+const AST={pending:['Pendiente','b-amber'],approved:['Aprobada','b-green'],rejected:['Rechazada','b-red']};
+const DOCN={cedula_front:'Cédula · frente',cedula_back:'Cédula · reverso',licencia:'Licencia de conducción',tarjeta_propiedad:'Tarjeta de propiedad',soat:'SOAT',tecnomecanica:'Técnico-mecánica',selfie:'Foto del rostro',moto_foto:'Foto de la moto'};
+function renderApps(){
+  if(!S.appsReady){$('view').innerHTML='<div class="card"><div class="empty">Falta ejecutar <b>socios_setup.sql</b> en Supabase para activar las solicitudes.</div></div>';return}
+  const cnt=f=>f==='all'?S.apps.length:S.apps.filter(a=>a.status===f).length;
+  const l=S.apps.filter(a=>S.appF==='all'||a.status===S.appF);
+  $('view').innerHTML='<div class="chips">'+AF.map(f=>'<button class="chip'+(S.appF===f[0]?' on':'')+'" data-act="af" data-f="'+f[0]+'">'+f[1]+' ('+cnt(f[0])+')</button>').join('')+'</div>'+
+    (l.length?l.map(a=>{const s=AST[a.status]||['?','b-gray'];
+      return '<button class="row" data-act="app" data-id="'+a.user_id+'">'+ava(a.full_name)+'<div class="t"><b>'+esc(a.full_name)+'</b><small>'+esc(a.plate)+' · '+esc(a.phone)+' · '+fmtT(a.submitted_at)+'</small></div><div class="r">'+badge(s[0],s[1])+'</div></button>'}).join(''):'<div class="empty">No hay solicitudes en esta lista.</div>');
+}
+async function openApp(uid){
+  killPanelMap();P={type:'app',id:uid,urls:null};showPanel();renderApp();
+  const a=S.apps.find(x=>x.user_id===uid);if(!a)return;
+  const keys=Object.keys(a.docs||{}),paths=keys.map(k=>a.docs[k]);
+  const res=paths.length?await sb.storage.from('driver-docs').createSignedUrls(paths,3600):{data:[]};
+  if(!P||P.type!=='app'||P.id!==uid)return;
+  P.urls={};P.urlErr=res.error?res.error.message:null;
+  (res.data||[]).forEach(x=>{const k=keys.find(z=>a.docs[z]===x.path);if(k&&x.signedUrl)P.urls[k]=x.signedUrl});
+  renderApp();
+}
+function renderApp(){
+  if(!P||P.type!=='app')return;
+  const a=S.apps.find(x=>x.user_id===P.id);
+  if(!a){$('panel').innerHTML='<div class="phead"><button class="x" data-act="close">✕</button><div><b>Solicitud no encontrada</b></div></div>';return}
+  const st=AST[a.status]||['?','b-gray'],veh=[a.vehicle_brand,a.vehicle_model,a.vehicle_year].filter(Boolean).join(' ')||'—';
+  let h='<div class="phead"><button class="x" data-act="close">✕</button><div class="avb">'+esc((a.full_name||'?')[0].toUpperCase())+'</div><div><b>'+esc(a.full_name)+'</b><small>'+esc(a.phone)+'</small><small>Placa '+esc(a.plate)+'</small><div>'+badge(st[0])+'</div></div></div><div class="pbody">';
+  h+='<div class="acts">'+(a.status!=='approved'?'<button class="btn btn-green btn-sm" data-act="approve" data-id="'+a.user_id+'">✔ Aceptar perfil</button>':'')+(a.status!=='rejected'?'<button class="btn btn-red btn-sm" data-act="reject" data-id="'+a.user_id+'">✖ Rechazar perfil</button>':'')+
+    '<button class="btn btn-dark btn-sm" data-act="chat" data-id="'+a.user_id+'">✉ Chatear</button><a class="btn btn-ghost btn-sm" target="_blank" rel="noopener" href="'+waLink(a.phone)+'">WhatsApp</a></div>';
+  if(a.status==='rejected')h+='<div class="lock">Rechazada '+fmtT(a.reviewed_at)+' · Motivo: '+esc(a.reject_reason||'—')+'</div>';
+  if(a.status==='approved')h+='<div class="note" style="background:#E9F8EF"><b>Aprobada</b> '+fmtT(a.reviewed_at)+'</div>';
+  h+='<div class="kv"><div><small>Cédula</small><b>'+esc(a.id_number)+'</b></div><div><small>Ciudad</small><b>'+esc(a.city||'—')+'</b></div><div><small>Moto</small><b>'+esc(veh)+'</b></div><div><small>Enviada</small><b>'+fmtT(a.submitted_at)+'</b></div></div>';
+  h+='<div class="card" style="padding:14px"><h3>Documentos</h3>';
+  if(P.urls===null)h+='<div class="empty">Cargando documentos…</div>';
+  else{
+    if(P.urlErr)h+='<div class="lock">No se pudieron abrir los documentos: '+esc(P.urlErr)+'</div>';
+    h+=Object.keys(DOCN).filter(k=>a.docs&&a.docs[k]).map(k=>{
+      const u=P.urls[k],pdf=/\.pdf$/i.test(a.docs[k]);
+      return '<div class="note"><b>'+DOCN[k]+'</b>'+(u?(pdf?'<p><a class="btn btn-dark btn-sm" target="_blank" rel="noopener" href="'+esc(u)+'">Abrir PDF</a></p>':'<p><a target="_blank" rel="noopener" href="'+esc(u)+'"><img src="'+esc(u)+'" alt="'+DOCN[k]+'" style="width:100%;border-radius:12px;display:block;background:#eee"></a></p><small>Toca la imagen para verla en grande</small>'):'<p>No disponible</p>')+'</div>'}).join('');
+  }
+  h+='</div></div>';
+  $('panel').innerHTML=h;
+}
+async function doReview(uid,approve){
+  const a=S.apps.find(x=>x.user_id===uid);if(!a)return;
+  let reason=null;
+  if(approve){
+    const v=await ask({title:'Aceptar a '+a.full_name,body:'Quedará como socio conductor y le llegará una notificación de <b>aceptado</b> en la app.',ok:'Aceptar perfil'});if(!v)return;
+  }else{
+    const v=await ask({title:'Rechazar a '+a.full_name,body:'Le llegará una notificación de <b>rechazado</b> con el motivo. Podrá corregir y volver a enviar.',danger:1,ok:'Rechazar perfil',fields:[{id:'reason',label:'Motivo (lo verá el aspirante)',type:'textarea',ph:'Ej: La foto de la licencia no se ve bien',req:1}]});if(!v)return;reason=v.reason;
+  }
+  if(!await rpc('admin_review_application',{p_user:uid,p_approve:approve,p_reason:reason}))return;
+  toast(approve?'Perfil aceptado y notificado':'Perfil rechazado y notificado');
+  await loadAll();render(false);if(P&&P.type==='app')renderApp();
+}
+
+/* ---------- REPORTES ---------- */
+function renderReports(){
+  const l=S.reports;
+  $('view').innerHTML=l.length?l.map(r=>'<div class="card" style="padding:14px"><div style="display:flex;gap:10px;align-items:center;margin-bottom:6px"><button style="display:flex;gap:10px;align-items:center;text-align:left" data-act="user" data-id="'+r.user_id+'">'+ava(nameOf(r.user_id))+'<b>'+esc(nameOf(r.user_id))+'</b></button><div class="sp"></div>'+badge(r.severity,SEV[r.severity])+'</div>'+repCard(r).replace('class="note"','class="note" style="background:var(--bg)"')+'</div>').join(''):'<div class="card"><div class="empty">Aún no has creado reportes. Abre el perfil de un conductor y usa “Nuevo reporte”.</div></div>';
+}
+
+/* ---------- FINANZAS ---------- */
+function renderFinance(){
+  const t0=sod(),wk=Date.now()-7*864e5,mo=Date.now()-30*864e5;
+  const per=since=>{const o={gross:{},com:{},n:0};S.rides.filter(r=>r.status==='done'&&Date.parse(r.finished_at)>=since).forEach(r=>{o.n++;o.gross[r.currency]=(o.gross[r.currency]||0)+ +r.fare;o.com[r.currency]=(o.com[r.currency]||0)+ +r.commission});return o};
+  const f=o=>{const t=Object.keys(o).map(c=>money(o[c],c));return t.length?t.join(' · '):'$0'};
+  const a=per(t0),b=per(wk),c=per(mo);
+  const debtors=[...S.drivers].map(id=>({id,d:debtOf(id)})).filter(x=>hasDebt(x.d)).sort((x,y)=>Object.values(y.d).reduce((p,q)=>p+q,0)-Object.values(x.d).reduce((p,q)=>p+q,0));
+  const k=(l,o)=>'<div class="kpi"><small>'+l+'</small><b>'+f(o.gross)+'</b><em>'+o.n+' viajes · comisión '+f(o.com)+'</em></div>';
+  $('view').innerHTML='<div class="kpis">'+k('Hoy',a)+k('Últimos 7 días',b)+k('Últimos 30 días',c)+'</div><div class="card"><h3>Conductores con deuda ('+debtors.length+')</h3>'+
+    (debtors.length?debtors.map(x=>{const p=S.profiles[x.id]||{name:'Conductor'};return '<div class="row" style="cursor:default">'+ava(p.name)+'<div class="t"><b>'+esc(p.name)+(p.blocked?' '+badge('Bloqueado','b-red'):'')+'</b><small>'+esc(p.phone||'')+'</small></div><div class="r"><b style="color:var(--red)">'+esc(debtTxt(x.d))+'</b><div style="display:flex;gap:6px;margin-top:6px;justify-content:flex-end"><a class="btn btn-green btn-sm" target="_blank" rel="noopener" href="'+waLink(p.phone)+'">Cobrar</a><button class="btn btn-ghost btn-sm" data-act="user" data-id="'+x.id+'">Perfil</button><button class="btn btn-red btn-sm" data-act="clear" data-id="'+x.id+'">Quitar</button></div></div></div>'}).join(''):'<div class="empty">Nadie debe nada. 🎉</div>')+'</div>'+
+    '<p class="empty">Las cifras usan los últimos 60 días de viajes cargados. La deuda sale del saldo de cada conductor.</p>';
+}
+
+/* ---------- DIFUSIÓN ---------- */
+function renderBroadcast(){
+  $('view').innerHTML='<div class="card"><h3>Mensaje para todos los conductores</h3><p class="empty" style="text-align:left;padding:0 0 12px">Llega a su chat de Ayuda. No se envía a conductores bloqueados.</p><textarea class="big" id="bt" maxlength="1000" placeholder="Ej: Mañana habrá mantenimiento a las 3 a.m."></textarea><button class="btn btn-red btn-block" data-act="bsend">Enviar a todos los conductores</button></div>';
+}
+async function doBroadcast(){
+  const t=($('bt')||{}).value;if(!t||!t.trim()){toast('Escribe un mensaje');return}
+  const v=await ask({title:'Enviar difusión',body:'Se enviará a '+[...S.drivers].filter(id=>!(S.profiles[id]||{}).blocked).length+' conductores.',ok:'Enviar'});if(!v)return;
+  const r=await rpc('admin_broadcast',{p_text:t.trim()});if(!r)return;
+  toast('Enviado a '+r.data+' conductores');$('bt').value='';await loadAll();
+}
+
+/* ---------- REGISTRO ---------- */
+const ACT={app_approve:'Aprobó como socio a',app_reject:'Rechazó la solicitud de',block:'Bloqueó',unblock:'Desbloqueó',cancel_ride:'Canceló un viaje de',clear_debt:'Quitó la deuda de',settle_penalty:'Marcó un cobro pagado de',report:'Reportó a',delete_report:'Eliminó un reporte de',broadcast:'Envió una difusión'};
+function renderLog(){
+  $('view').innerHTML=S.log.length?S.log.map(l=>'<div class="note"><b>'+esc(ACT[l.action]||l.action)+(l.user_id?' '+esc(nameOf(l.user_id)):'')+'</b>'+(l.detail&&Object.keys(l.detail).length?'<p>'+esc(Object.entries(l.detail).filter(([k,v])=>v!=null&&v!=='').map(([k,v])=>k+': '+(typeof v==='object'?JSON.stringify(v):v)).join(' · '))+'</p>':'')+'<small>'+fmtT(l.created_at)+'</small></div>').join(''):'<div class="card"><div class="empty">Todavía no hay acciones registradas.</div></div>';
+}
+
+/* ---------- SOPORTE ---------- */
+const supTs=m=>Date.parse(m.created_at);
+const supKey=t=>'adm_seen_'+t;
+const supSeen=t=>+(store.get(supKey(t))||0);
+function supMark(t){const last=S.sup.filter(m=>m.thread_id===t).reduce((a,m)=>Math.max(a,supTs(m)),0);if(last)store.set(supKey(t),last)}
+function supUnread(){const by={};S.sup.forEach(m=>{if(!m.from_admin&&supTs(m)>supSeen(m.thread_id))by[m.thread_id]=1});return Object.keys(by).length}
+const QUICK=['Hola, ¿en qué te puedo ayudar?','Ya revisé tu caso, dame un momento','Te quité la deuda, ya puedes conectarte','Envíame el comprobante de pago','Tu cuenta fue desbloqueada'];
+function renderSupport(){
+  const v=$('view'),keep=$('sIn')?$('sIn').value:'',hadFocus=document.activeElement&&document.activeElement.id==='sIn';
+  const by={};S.sup.forEach(m=>(by[m.thread_id]=by[m.thread_id]||[]).push(m));
+  let ids=Object.keys(by).sort((a,b)=>supTs(by[b][by[b].length-1])-supTs(by[a][by[a].length-1]));
+  if(S.supThread&&!by[S.supThread])ids.unshift(S.supThread);
+  const q=S.supQ.toLowerCase();if(q)ids=ids.filter(id=>nameOf(id).toLowerCase().includes(q));
+  const list=ids.length?ids.map(id=>{const l=by[id]?by[id][by[id].length-1]:null,un=l&&!l.from_admin&&supTs(l)>supSeen(id);
+    return '<button class="row'+(S.supThread===id?' sel':'')+'" data-act="thread" data-id="'+id+'">'+ava(nameOf(id))+'<div class="t"><b>'+esc(nameOf(id))+'</b><small>'+(l?(l.from_admin?'Tú: ':'')+esc(l.text):'Sin mensajes')+'</small></div>'+(un?'<i class="dot"></i>':'')+'</button>'}).join(''):'<div class="empty">Aún no hay conversaciones.</div>';
+  let chat='<div class="chat"><div class="empty" style="margin:auto">Elige una conversación</div></div>';
+  if(S.supThread){
+    const id=S.supThread,msgs=by[id]||[];
+    chat='<div class="chat"><div class="ch"><button class="btn btn-ghost btn-sm back" data-act="supback">←</button>'+ava(nameOf(id))+'<div style="flex:1"><b>'+esc(nameOf(id))+'</b><small>'+esc((S.profiles[id]||{}).phone||'')+'</small></div><button class="btn btn-ghost btn-sm" data-act="user" data-id="'+id+'">Perfil</button></div>'+
+      '<div class="msgs" id="sMsgs">'+(msgs.length?msgs.map(m=>'<div class="m '+(m.from_admin?'me':'ot')+'">'+esc(m.text)+'<small>'+fmtT(m.created_at)+'</small></div>').join(''):'<div class="empty">Escribe para iniciar la conversación.</div>')+'</div>'+
+      '<div class="qr">'+QUICK.map(t=>'<button data-act="quick" data-t="'+esc(t)+'">'+esc(t)+'</button>').join('')+'</div>'+
+      '<div class="cin"><input id="sIn" placeholder="Escribe tu respuesta…" maxlength="1000" autocomplete="off"><button class="btn btn-red" data-act="ssend">Enviar</button></div></div>';
+  }
+  v.innerHTML='<div class="sup'+(S.supThread?' chatting':'')+'"><div class="lst"><input class="search" id="sq" placeholder="Buscar conductor…" value="'+esc(S.supQ)+'">'+list+'</div>'+chat+'</div>';
+  $('sq').oninput=e=>{S.supQ=e.target.value;renderSupport();const s=$('sq');s.focus();s.setSelectionRange(s.value.length,s.value.length)};
+  if(S.supThread){const M=$('sMsgs');M.scrollTop=M.scrollHeight;const i=$('sIn');i.value=keep;i.onkeydown=e=>{if(e.key==='Enter')sendSup(i.value)};if(hadFocus)i.focus()}
+}
+function openThread(id){
+  closePanel();S.supThread=id;S.view='support';
+  document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('on',n.dataset.v==='support'));
+  $('vt').textContent=TITLES.support;supMark(id);render(true);
+}
+async function sendSup(text){
+  text=(text||'').trim();if(!text||!S.supThread)return;
+  const i=$('sIn');if(i)i.value='';
+  const{data,error}=await sb.from('support_messages').insert({thread_id:S.supThread,sender_id:S.me.id,from_admin:true,text:text.slice(0,1000)}).select().single();
+  if(error){toast(fnMissing(error)?'Falta ejecutar admin_setup.sql':'No se pudo enviar el mensaje');if(i)i.value=text;return}
+  supIncoming(data);
+}
+function supIncoming(row){
+  if(!row||S.sup.some(m=>m.id===row.id))return;
+  S.sup.push(row);S.sup.sort((a,b)=>supTs(a)-supTs(b));
+  const viewing=S.view==='support'&&S.supThread===row.thread_id;
+  if(viewing)supMark(row.thread_id);
+  else if(!row.from_admin){toast('Mensaje de '+nameOf(row.thread_id)+': '+row.text.slice(0,40));if(navigator.vibrate)navigator.vibrate(150)}
+  if(S.view==='support')renderSupport();
+  navBadges();
+}
+
+/* ---------- eventos ---------- */
+const A={
+  nav:d=>{closePanel();go(d.v)},
+  user:d=>openUser(d.id,d.tab),
+  ride:d=>openRide(d.id),
+  close:()=>closePanel(),
+  utab:d=>{P.tab=d.t;renderUser()},
+  sel:d=>selRide(d.id),
+  block:d=>doBlock(d.id),
+  clear:d=>doClear(d.id),
+  cancel:d=>doCancel(d.id),
+  report:d=>doReport(d.id,d.ride),
+  delrep:d=>doDelRep(d.id),
+  settle:d=>doSettle(d.id),
+  chat:d=>openThread(d.id),
+  rf:d=>{S.rideF=d.f;renderRides()},
+  uf:d=>{S.userF=d.f;renderUsers()},
+  app:d=>openApp(d.id),
+  af:d=>{S.appF=d.f;renderApps()},
+  approve:d=>doReview(d.id,true),
+  reject:d=>doReview(d.id,false),
+  thread:d=>{S.supThread=d.id;supMark(d.id);renderSupport();navBadges()},
+  supback:()=>{S.supThread=null;renderSupport()},
+  quick:d=>{const i=$('sIn');if(i){i.value=d.t;i.focus()}},
+  ssend:()=>{const i=$('sIn');if(i)sendSup(i.value)},
+  bsend:()=>doBroadcast(),
+  refresh:async()=>{await loadAll();render(false);toast('Datos actualizados')},
+  logout:async()=>{try{await sb.auth.signOut()}catch(e){}location.reload()}
+};
+document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(!el)return;const f=A[el.dataset.act];if(f){if(el.tagName==='A')return;f(el.dataset,el,e)}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('modal').style.display==='flex')$('m_no')&&$('m_no').click();else closePanel()}});
+
+/* ---------- sesión ---------- */
+function lerr(m){const e=$('lerr');e.textContent=m;e.style.display=m?'block':'none'}
+async function enter(user){
+  const r=await sb.rpc('is_admin');
+  if(r.error||r.data!==true){await sb.auth.signOut();lerr(r.error&&fnMissing(r.error)?'Falta ejecutar admin_setup.sql en Supabase.':'Esta cuenta no tiene permisos de administrador.');$('login').hidden=false;$('app').hidden=true;return false}
+  S.me=user;$('whoM').textContent=user.email;$('login').hidden=true;$('app').hidden=false;
+  await loadAll();go('home');startLive();return true;
+}
+$('lform').onsubmit=async e=>{
+  e.preventDefault();lerr('');
+  if(!sb){lerr('No pudimos conectar con el servidor.');return}
+  const email=$('lm').value.trim(),password=$('lp').value;
+  if(!email||!password){lerr('Ingresa correo y contraseña.');return}
+  const b=$('lgo');b.disabled=true;b.textContent='Entrando…';
+  const{data,error}=await sb.auth.signInWithPassword({email,password});
+  if(error)lerr(/invalid login/i.test(error.message)?'Correo o contraseña incorrectos.':error.message);
+  else await enter(data.user);
+  b.disabled=false;b.textContent='Entrar al panel';$('lp').value='';
+};
+let liveCh=null,softT=null,pollT=null;
+function soft(){clearTimeout(softT);softT=setTimeout(async()=>{await loadAll();if(S.view!=='support')render(false)},1200)}
+function startLive(){
+  if(liveCh)return;
+  liveCh=sb.channel('admin-live')
+    .on('postgres_changes',{event:'*',schema:'public',table:'rides'},soft)
+    .on('postgres_changes',{event:'*',schema:'public',table:'driver_applications'},soft)
+    .on('postgres_changes',{event:'*',schema:'public',table:'driver_locations'},p=>{if(p.new&&p.new.ride_id){S.locs[p.new.ride_id]=p.new;if(S.view==='home')updateHomeMap()}})
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'support_messages'},p=>p.new&&supIncoming(p.new))
+    .subscribe();
+  pollT=setInterval(async()=>{if(document.hidden||$('modal').style.display==='flex')return;await loadAll();if(S.view!=='support'&&S.view!=='broadcast')render(false)},20000);
+}
+(async()=>{
+  if(!sb){lerr('No pudimos cargar el servidor. Revisa tu internet.');return}
+  try{const{data}=await sb.auth.getSession();if(data&&data.session)await enter(data.session.user)}catch(e){}
+})();
+</script>
+</body>
+</html>
